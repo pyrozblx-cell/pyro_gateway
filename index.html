@@ -91,6 +91,10 @@ input:focus-visible,.btn:focus-visible,a:focus-visible{outline:3px solid var(--r
   overflow-wrap:anywhere;line-height:1.25;
 }
 .my-channel-pin a:hover{filter:brightness(1.06)}
+.my-channel-pin a{color:var(--ember-ink);text-decoration:none}
+.my-channel-pin a:focus-visible{outline:3px solid var(--ring);outline-offset:3px}
+.my-channel-pin a:hover{text-decoration:underline}
+.my-channel-pin{color:var(--text)}
 .my-channel-pin a:focus-visible{outline:3px solid var(--ring);outline-offset:3px}
 @media (max-width:1100px){
   .my-channel-pin{left:8px;width:126px;padding:9px 8px}
@@ -107,11 +111,13 @@ input:focus-visible,.btn:focus-visible,a:focus-visible{outline:3px solid var(--r
 </head>
 <body>
 
-<a class="my-channel-pin" href="https://www.youtube.com/@pyrozblxai" target="_blank" rel="noopener noreferrer" aria-label="Visit my YouTube channel, Pyro's channel">
+<div class="my-channel-pin" aria-label="My YouTube channel details">
   <span class="pin-label">MY CHANNEL</span>
-  <span style="display:block;font-weight:800;margin-bottom:5px">🔥 Pyro’s Channel</span>
-  <span style="display:block;font-size:.72em;opacity:.92">Open on YouTube ↗</span>
-</a>
+  <span style="display:block;font-size:.72rem;font-weight:700;margin:8px 0 4px">Name of channel</span>
+  <span style="display:block;font-weight:800;margin-bottom:9px">🔥 Pyro’s Channel</span>
+  <span style="display:block;font-size:.72rem;font-weight:700;margin:0 0 4px">Channel URL</span>
+  <a href="https://www.youtube.com/@pyrozblxai" target="_blank" rel="noopener noreferrer" style="display:block;font-size:.76rem;overflow-wrap:anywhere" aria-label="Open YouTube channel @pyrozblxai">youtube.com/@pyrozblxai ↗</a>
+</div>
 
 <main>
   <h1>Pyro’s Gateway</h1>
