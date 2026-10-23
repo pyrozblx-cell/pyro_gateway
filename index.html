@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Pyro’s Gateway</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@500;800&family=Figtree:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#eef1f6; --panel:#ffffff; --ink:#141b2d; --muted:#5b6478; --line:#d5dbe7;
+  --ember:#d9480f; --ember-ink:#ffffff; --ring:#141b2d; --err:#b42318;
+  box-sizing:border-box; padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){--bg:#0e1322;--panel:#171e33;--ink:#eef1f8;--muted:#9aa5bf;--line:#2a3452;--ember:#ff7a3d;--ember-ink:#1a0d05;--ring:#eef1f8;--err:#ff8f85;color-scheme:dark}
+}
+:root[data-theme="dark"]{--bg:#0e1322;--panel:#171e33;--ink:#eef1f8;--muted:#9aa5bf;--line:#2a3452;--ember:#ff7a3d;--ember-ink:#1a0d05;--ring:#eef1f8;--err:#ff8f85;color-scheme:dark}
+*,*::before,*::after{box-sizing:inherit}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:Figtree,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;font-size:16px;line-height:1.5}
+main{max-width:980px;margin:0 auto;padding:32px 20px 56px}
+h1{font-family:"Bricolage Grotesque",Georgia,"Times New Roman",serif;font-weight:800;font-size:clamp(2.2rem,7vw,3.6rem);letter-spacing:-.02em;line-height:1.05;margin:0 0 8px;text-align:center}
+.sub{text-align:center;color:var(--muted);margin:0 0 36px}
+.grid{display:grid;grid-template-columns:1fr auto 1fr;gap:20px;align-items:start}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:20px;min-width:0}
+.head{display:flex;align-items:center;gap:14px;margin-bottom:16px;min-height:64px}
+.avatar{flex:none;width:64px;height:64px;border-radius:50%;border:2px solid var(--ink);display:grid;place-items:center;font-family:"Bricolage Grotesque",Georgia,serif;font-weight:800;font-size:1.6rem;color:var(--muted);background:var(--bg)}
+.avatar{overflow:hidden}
+.avatar img{width:100%;height:100%;object-fit:cover;display:block}
+.avatar.on{background:var(--ember);border-color:var(--ember);color:var(--ember-ink)}
+.name{font-family:"Bricolage Grotesque",Georgia,serif;font-weight:500;font-size:1.25rem;overflow-wrap:anywhere}
+.name.empty{color:var(--muted)}
+.chain{align-self:start;margin-top:30px;width:56px;height:56px;border-radius:50%;display:grid;place-items:center;border:2px solid var(--ember);color:var(--ember)}
+.chain svg{width:28px;height:28px}
+label{display:block;font-weight:600;font-size:.9rem;margin:0 0 6px}
+input{width:100%;font:inherit;color:var(--ink);background:var(--bg);border:1.5px solid var(--line);border-radius:10px;padding:11px 12px}
+input::placeholder{color:var(--muted)}
+input:focus-visible,.btn:focus-visible,a:focus-visible{outline:3px solid var(--ring);outline-offset:2px}
+.msg{min-height:1.4em;margin:6px 0 14px;font-size:.88rem;color:var(--muted)}
+.msg.err{color:var(--err)}
+.btn{display:inline-flex;align-items:center;justify-content:center;width:100%;padding:12px 16px;border-radius:10px;border:0;font:inherit;font-weight:600;text-decoration:none;background:var(--ember);color:var(--ember-ink);cursor:pointer}
+.btn[aria-disabled="true"]{background:var(--line);color:var(--muted);pointer-events:none}
+.ghost{margin-top:8px;background:transparent;color:var(--ink);border:1.5px solid var(--ink)}
+.btn:disabled{background:transparent;color:var(--muted);border:1.5px solid var(--line);cursor:not-allowed}
+.btn.done:disabled{color:var(--ember);border-color:var(--ember)}
+.status{max-width:60ch;margin:-20px auto 28px;text-align:center;font-weight:600}
+.video{margin-top:6px}
+.frame{margin:4px auto 10px;width:100%;border-radius:12px;overflow:hidden;background:var(--bg);border:1px dashed var(--line);display:grid;place-items:center;color:var(--muted);font-size:.9rem;text-align:center}
+.frame.long{aspect-ratio:16/9}
+.frame.short{aspect-ratio:9/16;max-width:260px}
+.frame.idle{aspect-ratio:9/12;max-width:260px}
+.frame.live{border:0}
+.frame iframe{width:100%;height:100%;border:0}
+.alt{display:block;text-align:center;font-size:.88rem;color:var(--muted)}
+.note{margin:32px auto 0;max-width:60ch;text-align:center;color:var(--muted);font-size:.85rem}
+@media (max-width:760px){
+  .grid{grid-template-columns:1fr}
+  .chain{justify-self:center;margin:0;transform:rotate(90deg)}
+}
+@media (prefers-reduced-motion:no-preference){.avatar{transition:background .2s,color .2s,border-color .2s}}
+</style>
+</head>
+<body>
+<main>
+  <h1>Pyro’s Gateway</h1>
+  <p class="sub">Paste your channel and one video. Visitors can subscribe and watch right here.</p>
+  <p class="status" id="status" role="status" aria-live="polite">Videos unlock when both channels are subscribed.</p>
+
+  <div class="grid">
+    <section class="panel" id="p0" aria-label="First channel"></section>
+    <div class="chain" aria-hidden="true">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.07 0l3-3a5 5 0 0 0-7.07-7.07l-1.5 1.5"/><path d="M14 11a5 5 0 0 0-7.07 0l-3 3A5 5 0 0 0 11 21.07l1.5-1.5"/></svg>
+    </div>
+    <section class="panel" id="p1" aria-label="Second channel"></section>
+  </div>
+
+  <p class="note">Subscribing opens YouTube with a confirm prompt, so every subscriber is a real one. Please don’t trade subscriptions for subscriptions, as YouTube may remove them.</p>
+</main>
+
+<script>
+(function(){
+  var TPL = '<div class="head"><div class="avatar" data-a>?</div><div class="name empty" data-n>Name of channel</div></div>'
+    + '<label>Channel URL</label><input type="url" data-c placeholder="https://youtube.com/@yourchannel" autocomplete="off" spellcheck="false">'
+    + '<div class="msg" data-cm aria-live="polite"></div>'
+    + '<a class="btn" data-s aria-disabled="true" role="button" target="_blank" rel="noopener noreferrer">Subscribe</a>'
+    + '<button type="button" class="btn ghost" data-k disabled>I’ve subscribed</button>'
+    + '<div class="video"><div style="height:22px"></div><label>Short or long-form video URL</label><input type="url" data-v placeholder="https://youtube.com/shorts/… or watch?v=…" autocomplete="off" spellcheck="false">'
+    + '<div class="msg" data-vm aria-live="polite"></div>'
+    + '<div class="frame idle" data-f>Your video will appear here</div></div>';
+
+  var SUB = [false,false], UNLOCKED = false;
+  function refresh(){
+    var both = SUB[0] && SUB[1];
+    document.getElementById('status').textContent = both ? 'Both channels are subscribed. Videos are unlocked.' : (SUB[0] || SUB[1] ? 'Waiting for the other channel to be subscribed.' : 'Videos unlock when both channels are subscribed.');
+    if(both && !UNLOCKED){
+      UNLOCKED = true;
+      ['p0','p1'].forEach(function(id){ document.getElementById(id)._vi.dispatchEvent(new Event('input')); });
+    }
+  }
+
+  function parseChannel(raw){
+    raw = (raw||'').trim(); if(!raw) return null;
+    var m;
+    if((m = raw.match(/^@([\w.\-]{2,})$/))) return mk('@'+m[1], '@'+m[1], '@'+m[1]);
+    var u; try{ u = new URL(/^https?:\/\//i.test(raw) ? raw : 'https://'+raw); }catch(e){ return false; }
+    if(!/(^|\.)youtube\.com$/i.test(u.hostname)) return false;
+    var p = u.pathname;
+    if((m = p.match(/^\/(@[\w.\-]+)/))) return mk(m[1], m[1], m[1]);
+    if((m = p.match(/^\/channel\/(UC[\w\-]{22})/))) return mk('Channel '+m[1].slice(0,8)+'…', 'C', 'channel/'+m[1]);
+    if((m = p.match(/^\/(c|user)\/([\w.\-]+)/))) return mk(m[2], m[2], m[1]+'/'+m[2]);
+    return false;
+    function mk(name, ini, path){ return {name:name, initial:ini.replace('@','').charAt(0).toUpperCase(), sub:'https://www.youtube.com/'+path+'?sub_confirmation=1'}; }
+  }
+
+  function parseVideo(raw){
+    raw = (raw||'').trim(); if(!raw) return null;
+    var u; try{ u = new URL(/^https?:\/\//i.test(raw) ? raw : 'https://'+raw); }catch(e){ return false; }
+    var h = u.hostname.replace(/^www\.|^m\./,''), id = null, short = false, m;
+    if(h==='youtu.be') id = u.pathname.slice(1).split('/')[0];
+    else if(h==='youtube.com' || h==='music.youtube.com'){
+      if((m = u.pathname.match(/^\/shorts\/([\w\-]{11})/))){ id = m[1]; short = true; }
+      else if((m = u.pathname.match(/^\/(embed|live|v)\/([\w\-]{11})/))) id = m[2];
+      else if(u.pathname==='/watch') id = u.searchParams.get('v');
+    } else return false;
+    if(!id || !/^[\w\-]{11}$/.test(id)) return false;
+    return {id:id, short:short, url: short ? 'https://www.youtube.com/shorts/'+id : 'https://www.youtube.com/watch?v='+id};
+  }
+
+  function setup(root){
+    var $ = function(s){ return root.querySelector('['+s+']'); };
+    root.innerHTML = TPL;
+    var av=$('data-a'), nm=$('data-n'), ci=$('data-c'), cm=$('data-cm'), sb=$('data-s'),
+        vi=$('data-v'), vm=$('data-vm'), fr=$('data-f'), kb=$('data-k'), idx=+root.id.slice(1);
+    root._vi = vi;
+    kb.addEventListener('click', function(){
+      SUB[idx] = true; kb.disabled = true; kb.classList.add('done'); kb.textContent = 'Subscribed ✓';
+      refresh();
+    });
+
+    ci.addEventListener('input', function(){
+      var r = parseChannel(ci.value);
+      if(r === null){ reset(); cm.textContent=''; cm.className='msg'; return; }
+      if(r === false){ reset(); cm.textContent='That doesn’t look like a YouTube channel link. Try youtube.com/@name.'; cm.className='msg err'; return; }
+      av.textContent = r.initial; av.className='avatar on';
+      nm.textContent = r.name; nm.className='name';
+      sb.href = r.sub; sb.setAttribute('aria-disabled','false'); if(!SUB[idx]) kb.disabled = false;
+      cm.textContent='Channel found.'; cm.className='msg';
+      clearTimeout(ci._t); var q = ci.value; ci._t = setTimeout(function(){ enrich(q); }, 600);
+    });
+    function enrich(q){ // asks our backend for the real channel name and picture; if it fails, the letter stays
+      fetch('/api/channel?url=' + encodeURIComponent(q)).then(function(r){ return r.ok ? r.json() : null; }).then(function(d){
+        if(!d || ci.value !== q) return;
+        nm.textContent = d.name; cm.textContent = 'Channel found: ' + d.name + '.';
+        if(/^https:\/\/[\w.\-]+\.(ggpht|googleusercontent)\.com\//.test(d.avatar)){
+          var im = document.createElement('img'); im.src = d.avatar; im.alt = ''; im.referrerPolicy = 'no-referrer';
+          av.textContent = ''; av.appendChild(im);
+        }
+      }).catch(function(){});
+    }
+    function reset(){
+      av.textContent='?'; av.className='avatar'; nm.textContent='Name of channel'; nm.className='name empty';
+      sb.removeAttribute('href'); sb.setAttribute('aria-disabled','true'); if(!SUB[idx]) kb.disabled = true;
+    }
+
+    vi.addEventListener('input', function(){
+      var r = parseVideo(vi.value);
+      fr.innerHTML=''; fr.className='frame idle';
+      if(r === null){ fr.textContent='Your video will appear here'; vm.textContent=''; vm.className='msg'; return; }
+      if(r === false){ fr.textContent='Your video will appear here'; vm.textContent='That doesn’t look like a YouTube video link.'; vm.className='msg err'; return; }
+      if(!UNLOCKED){ fr.textContent='Locked until both channels are subscribed.'; vm.textContent='Video saved. It unlocks when both channels are subscribed.'; vm.className='msg'; return; }
+      var f = document.createElement('iframe');
+      f.src = 'https://www.youtube-nocookie.com/embed/'+r.id+'?rel=0';
+      f.title = 'YouTube video player'; f.loading='lazy'; f.allowFullscreen = true;
+      f.allow = 'accelerometer; encrypted-media; gyroscope; picture-in-picture; web-share';
+      fr.appendChild(f); fr.className = 'frame live ' + (r.short ? 'short' : 'long');
+      vm.textContent = r.short ? 'Short detected.' : 'Long-form video detected.'; vm.className='msg';
+      
+    });
+  }
+  setup(document.getElementById('p0'));
+  setup(document.getElementById('p1'));
+})();
+</script>
+</body>
+</html>
